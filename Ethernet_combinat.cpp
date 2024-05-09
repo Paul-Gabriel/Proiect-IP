@@ -10,6 +10,16 @@ char password[] = "nume";
 EthernetClient client;
 MySQL_Connection conn((Client *)&client);
 
+//PINI leduri
+#define LED_BUCATARIE 1
+#define LED_SUFRAGERIE 2
+#define LED_DORMITOR 3
+#define LED_BAIE 4
+#define LED_USA 5
+#define LED_CENTRALA 6
+
+float temperatura_ambientala=19.5;
+
 //
 //INTEROGE
 //
@@ -30,6 +40,37 @@ void setup() {
         delay(1000);
     else
         Serial.println("Connection failed.");
+        
+    pinMode(LED_BUCATARIE, OUTPUT);
+    pinMode(LED_SUFRAGERIE, OUTPUT);
+    pinMode(LED_DORMITOR, OUTPUT);
+    pinMode(LED_BAIE, OUTPUT);
+    pinMode(LED_USA, OUTPUT);
+    pinMode(LED_CENTRALA, OUTPUT);
+}
+
+//setat intensitate lumina camera
+void lumina_camera(int camera, int intensitate){
+    analogWrite(camera, intensitate);
+}
+
+//deschidere/inchidere usa
+void usa(bool stare_incuietoare){
+    if (stare_incuietoare)
+        digitalWrite(LED_USA, HIGH);
+    else
+        digitalWrite(LED_USA, LOW);
+}
+
+void setare_temperatura(float temperatura_setata){
+    temperatura_ambientala=temperatura_setata;
+}
+
+void termostat(float temperatura_actuala){
+    if(temperatura_ambientala>temperatura_actuala)
+        digitalWrite(LED_CENTRALA, HIGH);
+    else
+        digitalWrite(LED_CENTRALA, LOW);
 }
 
 void loop() {
