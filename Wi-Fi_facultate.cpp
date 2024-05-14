@@ -20,7 +20,7 @@ char password[] = "nume"; // MySQL user login password
 // Use WiFiClient class to create TCP connections
 WiFiClient client;
 MySQL_Connection conn((Client *)&client);
-char INSERT_SQL[] = "INSERT INTO homeautomation.test (nume,prenume) VALUES ('Stelian','22.33')";
+// char INSERT_SQL[] = "INSERT INTO homeautomation.test (nume,prenume) VALUES ('Stelian','22.33')";
 
 void sendData();
 
@@ -53,30 +53,34 @@ void setup() {
     }
 }
 
-void sendData(){
+char INSERT_SQL[] = "INSERT INTO homeautomation.Setări_Temperatură (Citire_temperatura) VALUES (";
+
+void sendData(float temperatura){
     Serial.println("Recording data.");
     // Initiate the query class instance
     MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);
 
-    //Cred ca aici o sa citim temperatura de la senzor si o vom scrie in baza de date
+    //Instructiunea de punere in BD a temperaturii
+    char query[100];
+    sprintf(query, "%s%.2f)", INSERT_SQL, temperatura);
 
     // Execute the query
     //adauga in baza de date
-    cur_mem->execute(INSERT_SQL);
+    cur_mem->execute(query);
     // Note: since there are no results, we do not need to read any data
     // Deleting the cursor also frees up memory used
     delete cur_mem;
 }
 
 void loop(){
-    DHT.read(DHT11_PIN);
+    float temperatura = DHT.read(DHT11_PIN);
     Serial.print("temp:");
     Serial.print(DHT.temperature);
-    Serial.print("  humi:");
-    Serial.println(DHT.humidity);
+    // Serial.print("  humi:");
+    // Serial.println(DHT.humidity);
     delay(1000);
     if (conn.connect(server_addr, 3306, user, password)) {
-        sendData();
+        sendData(temperatura);
         delay(1000);
         conn.close();
     }
