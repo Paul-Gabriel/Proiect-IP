@@ -17,8 +17,8 @@ DFRobot_DHT11 DHT;
 #define LED_SUFRAGERIE 2
 #define LED_DORMITOR 3
 #define LED_BAIE 4
-#define LED_USA 5
-#define LED_CENTRALA 6
+#define LED_USA 6
+#define LED_CENTRALA 9
 #define DHT11_PIN 10
 
 float temperatura_ambientala=29.0;
@@ -54,7 +54,7 @@ void setup() {
 
 //setat intensitate lumina camera
 void lumina_camera(int camera, int intensitate){
-    analogWrite(camera, (int)((intensitate/100)*(255-128)+128));
+    analogWrite(camera, (int)((intensitate/100)*(255-128)+127));
 }
 
 //deschidere/inchidere usa
@@ -83,24 +83,45 @@ void loop() {
     //
     //INTEROGE
     //
+
+    //USA
     sprintf(query, "SELECT Setare_stare_usa FROM hihome.Control_Usa", 9000000);
-    //ia din baza de date
     cur_mem->execute(query);
     usa(cur_mem->getBoolean);
 
-    //Cred ca aici o sa interpretam ce am luat din baza de date 
-    //si dupa scriem inapoi in baza de date
-    lumina_camera(LED_BUCATARIE,50);
+    //LUMINI
+    sprintf(query, "SELECT Setare_intensitate  FROM hihome.Comenzi_Lumină ", 9000000);
+    cur_mem->execute(query);
+    row_values *row = NULL;
+    int i=1;
+    do {
+        row = cur_mem->get_next_row();
+        if (row != NULL) {
+            lumina_camera(i++,row->values[0]);
+        }
+    } while (row != NULL);
 
-    usa(1);
+    //CENTRALA
+    sprintf(query, "SELECT Setare_temperatura FROM hihome.Setări_Temperatură", 9000000);
+    cur_mem->execute(query);
+    setare_temperatura(cur_mem->getFloat);
+    termostat();
 
-    setare_temperatura();
-    
+
     //
     //ADAUGARE
     //
+
+    //USA
     cur_mem->execute("INSERT INTO hihome.Control_Usa (Citire_stare_usa) VALUES (%s)",digitalRead(LED_USA == HIGH));
 
+    //LUMINI 
+    for(int camera=1; camera<=4; camera++){
+        cur_mem->execute("INSERT INTO hihome.Comenzi_Lumină (Citire_stare_lumini) VALUES (%s)",digitalRead(camera == HIGH)); 
+    }
+ 
+    //CENTRALA 
+    cur_mem->execute("INSERT INTO hihome.Setări_Temperatură (Citire_temperatura) VALUES (%.2f)", DHT.read(DHT11_PIN));
 
     delete cur_mem;
     delay(4000);
