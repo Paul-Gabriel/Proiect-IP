@@ -20,7 +20,7 @@ char password[] = "nume"; // MySQL user login password
 // Use WiFiClient class to create TCP connections
 WiFiClient client;
 MySQL_Connection conn((Client *)&client);
-// char INSERT_SQL[] = "INSERT INTO homeautomation.test (nume,prenume) VALUES ('Stelian','22.33')";
+// char INSERT_SQL[] = "INSERT INTO hihome.test (nume,prenume) VALUES ('Stelian','22.33')";
 
 void sendData();
 
@@ -45,15 +45,10 @@ void setup() {
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
     //MySql section
-    Serial.println("Connecting...");
-    
-    else
-    {
-        Serial.println("Connection failed.");
-    }
+    Serial.println("Connecting...");    
 }
 
-char INSERT_SQL[] = "INSERT INTO homeautomation.Setări_Temperatură (Citire_temperatura) VALUES (";
+char INSERT_SQL[] = "INSERT INTO hihome.Setări_Temperatură (Citire_temperatura) VALUES (";
 
 void sendData(float temperatura){
     Serial.println("Recording data.");
@@ -74,8 +69,8 @@ void sendData(float temperatura){
 
 void loop(){
     float temperatura = DHT.read(DHT11_PIN);
-    Serial.print("temp:");
-    Serial.print(DHT.temperature);
+    // Serial.print("temp:");
+    // Serial.print(DHT.temperature);
     // Serial.print("  humi:");
     // Serial.println(DHT.humidity);
     delay(1000);
@@ -83,5 +78,9 @@ void loop(){
         sendData(temperatura);
         delay(1000);
         conn.close();
+    }
+    else
+    {
+        Serial.println("Connection failed.");
     }
 }

@@ -10,6 +10,8 @@ char password[] = "nume";
 EthernetClient client;
 MySQL_Connection conn((Client *)&client);
 
+DFRobot_DHT11 DHT;
+
 //PINI leduri
 #define LED_BUCATARIE 1
 #define LED_SUFRAGERIE 2
@@ -17,19 +19,20 @@ MySQL_Connection conn((Client *)&client);
 #define LED_BAIE 4
 #define LED_USA 5
 #define LED_CENTRALA 6
+#define DHT11_PIN 10
 
-float temperatura_ambientala=19.5;
+float temperatura_ambientala=29.0;
 
 //
 //INTEROGE
 //
-const char QUERY_POP[] = "SELECT value FROM homeautomation.test";
+const char QUERY_POP[] = "SELECT value FROM hihome.test";
 char query[128];
 
 //
 //ADAUGARE
 //
-char INSERT_SQL[] = "INSERT INTO homeautomation.test (nume, prenume) VALUES ('Stelian','Balet')";
+char INSERT_SQL[] = "INSERT INTO hihome.test (nume, prenume) VALUES ('Stelian','Balet')";
 
 void setup() {
     Serial.begin(9600);
@@ -51,7 +54,7 @@ void setup() {
 
 //setat intensitate lumina camera
 void lumina_camera(int camera, int intensitate){
-    analogWrite(camera, intensitate);
+    analogWrite(camera, (int)((intensitate/100)*(255-128)+128));
 }
 
 //deschidere/inchidere usa
@@ -66,8 +69,8 @@ void setare_temperatura(float temperatura_setata){
     temperatura_ambientala=temperatura_setata;
 }
 
-void termostat(float temperatura_actuala){
-    if(temperatura_ambientala>temperatura_actuala)
+void termostat(){
+    if(temperatura_ambientala>DHT.read(DHT11_PIN))
         digitalWrite(LED_CENTRALA, HIGH);
     else
         digitalWrite(LED_CENTRALA, LOW);
@@ -80,44 +83,25 @@ void loop() {
     //
     //INTEROGE
     //
-    Serial.println("Citeste din baza de date");
-    sprintf(query, QUERY_POP, 9000000);
+    sprintf(query, "SELECT Setare_stare_usa FROM hihome.Control_Usa", 9000000);
     //ia din baza de date
     cur_mem->execute(query);
-    //ia capul de tabel
-    column_names *cols = cur_mem->get_columns();
-    for (int f = 0; f < cols->num_fields; f++) {
-        Serial.print(cols->fields[f]->name);
-        if (f < cols->num_fields-1) {
-            Serial.print(',');
-        }
-    }
-    Serial.println();
-    //citeste randurile si le afisaza
-    row_values *row = NULL;
-    do {
-        row = cur_mem->get_next_row();
-        if (row != NULL) {
-            for (int f = 0; f < cols->num_fields; f++) {
-                Serial.print(row->values[f]);
-                if (f < cols->num_fields-1) {
-                    Serial.print(',');
-                }
-            }
-        Serial.println();
-        }
-    } while (row != NULL);
-    
+    usa(cur_mem->getBoolean);
+
     //Cred ca aici o sa interpretam ce am luat din baza de date 
     //si dupa scriem inapoi in baza de date
+    lumina_camera(LED_BUCATARIE,50);
 
+    usa(1);
+
+    setare_temperatura();
+    
     //
     //ADAUGARE
     //
-    Serial.println("Adaugare in baza de date.");
-    //adauga in baza de date
-    cur_mem->execute(INSERT_SQL);
-    
+    cur_mem->execute("INSERT INTO hihome.Control_Usa (Citire_stare_usa) VALUES (%s)",digitalRead(LED_USA == HIGH));
+
+
     delete cur_mem;
     delay(4000);
 }
